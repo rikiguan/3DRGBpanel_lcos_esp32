@@ -41,7 +41,6 @@ void initI2C()
     ESP_LOGI(TAG, "i2c_0_master_init OK");
 }
 
-
 void initLcosI2CComand()
 {
     lcosi2cwrite(0x00, 0b00010110); // R00h
@@ -72,4 +71,12 @@ Point3 perspectiveProjection(Point3 p)
     resultPoint.y = (0.5 * (1 - y1 / w) * 240);
     resultPoint.z = w;
     return resultPoint;
+}
+
+// 计算重心坐标
+void cacuCenterOfGravity(Point3 p0, Point3 p1, Point3 p2, float *alpha, float *beta, float *gamma,float x,float y)
+{
+    *alpha = (-(x - p1.x) * (p2.y - p1.y) + (y - p1.y) * (p2.x - p1.x)) / (-(p0.x - p1.x) * (p2.y - p1.y) + (p0.y - p1.y) * (p2.x - p1.x));
+    *beta = (-(x - p2.x) * (p0.y - p2.y) + (y - p2.y) * (p0.x - p2.x)) / (-(p1.x - p2.x) * (p0.y - p2.y) + (p1.y - p2.y) * (p0.x - p2.x));
+    *gamma = 1.0f - *alpha - *beta;
 }
