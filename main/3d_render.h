@@ -28,8 +28,8 @@ static float fac_roll;
 static float Camx = 0;
 static float Camy = 0;
 static float Camz = 0;
-static float near = 0.1;
-static float far = 1000;
+// static float near = 0.1;
+// static float far = 1000;
 
 
 
@@ -39,7 +39,6 @@ static float far = 1000;
 void initI2C();
 void initLcosI2CComand();
 void lcosi2cwrite(uint8_t addr, uint8_t pcmd);
-Point3 perspectiveProjection(Point3 p);
 
 
 

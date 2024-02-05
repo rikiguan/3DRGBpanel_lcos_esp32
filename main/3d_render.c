@@ -60,18 +60,18 @@ void initLcosI2CComand()
     lcosi2cwrite(0x17, 0xFF);
 }
 
-Point3 perspectiveProjection(Point3 p)
-{
-    float x1 = Camx + fac_a * p.x + fac_b * p.y + fac_c * p.z;
-    float y1 = Camy + fac_d * p.x + fac_e * p.y + fac_f * p.z;
-    // float z1 = (2 * far * near) / (-far + near) + (Camz * (far + near)) / (-far + near) + (far + near) * (-cr *cr * cy *cy * sp - cy *cy * sp * sr *sr - cr *cr * sp * sy *sy - sp * sr *sr * sy *sy) * p.x / (-far + near) + (cp * (far + near) * sr * 1.0) * p.y / (-far + near) + cp * cr * (far + near)  * p.z / (-far + near);
-    float w = -Camz + fac_g * p.x - fac_h * p.y - fac_i * p.z;
-    Point3 resultPoint;
-    resultPoint.x = (0.5 * (x1 / w + 1) * 320);
-    resultPoint.y = (0.5 * (1 - y1 / w) * 240);
-    resultPoint.z = w;
-    return resultPoint;
-}
+// Point3 perspectiveProjection(Point3 p)
+// {
+//     float x1 = Camx + fac_a * p.x + fac_b * p.y + fac_c * p.z;
+//     float y1 = Camy + fac_d * p.x + fac_e * p.y + fac_f * p.z;
+//     // float z1 = (2 * far * near) / (-far + near) + (Camz * (far + near)) / (-far + near) + (far + near) * (-cr *cr * cy *cy * sp - cy *cy * sp * sr *sr - cr *cr * sp * sy *sy - sp * sr *sr * sy *sy) * p.x / (-far + near) + (cp * (far + near) * sr * 1.0) * p.y / (-far + near) + cp * cr * (far + near)  * p.z / (-far + near);
+//     float w = -Camz + fac_g * p.x - fac_h * p.y - fac_i * p.z;
+//     Point3 resultPoint;
+//     resultPoint.x = (0.5 * (x1 / w + 1) * 320);
+//     resultPoint.y = (0.5 * (1 - y1 / w) * 240);
+//     resultPoint.z = w;
+//     return resultPoint;
+// }
 
 // // 计算重心坐标
 // void cacuCenterOfGravity(Point3 p0, Point3 p1, Point3 p2, float *alpha, float *beta, float *gamma,float x,float y)

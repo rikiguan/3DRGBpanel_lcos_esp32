@@ -103,7 +103,7 @@ static void example_increase_lvgl_tick(void *arg)
 
 static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
-    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t)drv->user_data;
+    // esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t)drv->user_data;
 
     // int offsetx1 = area->x1;
     // int offsetx2 = area->x2;
@@ -129,41 +129,41 @@ Point3 perspectiveProjection1(Point3 p)
     Point3 resultPoint;
     resultPoint.x = (0.5 * (x1 / w + 1) * 320);
     resultPoint.y = (0.5 * (1 - y1 / w) * 240);
-    resultPoint.z = 1/w;//注意这里存的是w的倒数
+    resultPoint.z = 1 / w; // 注意这里存的是w的倒数
     return resultPoint;
 }
 
 //--------------------------------Calculate3DTask--------------------------------//
 void Calculate3DTask(void *pvParam)
 {
+    // 纹理坐标
+    Point3 uv0 = ScreenPoints3[3];
+    Point3 uv1 = ScreenPoints3[0];
+    Point3 uv2 = ScreenPoints3[2];
+
+    // 纹理坐标
+    Point3 auv0 = ScreenPoints3[0];
+    Point3 auv1 = ScreenPoints3[1];
+    Point3 auv2 = ScreenPoints3[3];
+    // 初始化插值参数``
+    float alpha, beta, gamma, alpha1, beta1, gamma1;
+
     // lv_disp_drv_t *drv=&disp_drv;
     while (1)
     {
-        ESP_LOGI(TAG, "Calculate3DTask:Waiting...");
+        // ESP_LOGI(TAG, "Calculate3DTask:Waiting...");
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        ESP_LOGI(TAG, "Calculate3DTask:Caculate");
+        // ESP_LOGI(TAG, "Calculate3DTask:Caculate");
 
         // 三角形顶点坐标
         Point3 p0 = perspectiveProjection1(ScreenPoints[3]);
         Point3 p1 = perspectiveProjection1(ScreenPoints[0]);
         Point3 p2 = perspectiveProjection1(ScreenPoints[2]);
 
-        // 纹理坐标
-        Point3 uv0 = ScreenPoints3[3];
-        Point3 uv1 = ScreenPoints3[0];
-        Point3 uv2 = ScreenPoints3[2];
         // 三角形顶点坐标
         Point3 ap0 = perspectiveProjection1(ScreenPoints[0]);
         Point3 ap1 = perspectiveProjection1(ScreenPoints[1]);
         Point3 ap2 = perspectiveProjection1(ScreenPoints[3]);
-
-        // 纹理坐标
-        Point3 auv0 = ScreenPoints3[0];
-        Point3 auv1 = ScreenPoints3[1];
-        Point3 auv2 = ScreenPoints3[3];
-
-        // 初始化插值参数``
-        float alpha, beta, gamma, alpha1, beta1, gamma1;
 
         float fac_l = p2.x - p1.x;
         float fac_m = p2.y - p1.y;
@@ -171,9 +171,8 @@ void Calculate3DTask(void *pvParam)
         float fac_o = (p0.x - p2.x);
         float fac_p = (p0.y - p2.y);
         float fac_q = p2.x * fac_p - p2.y * fac_o;
-        float fac_j = 1.0/(-(p0.x) * (fac_m) + (p0.y) * (fac_l) + fac_n);
-        float fac_k = 1.0/(-(p1.x) * (fac_p) + (p1.y) * (fac_o) + fac_q);
-
+        float fac_j = 1.0 / (-(p0.x) * (fac_m) + (p0.y) * (fac_l) + fac_n);
+        float fac_k = 1.0 / (-(p1.x) * (fac_p) + (p1.y) * (fac_o) + fac_q);
 
         float fac_al = ap2.x - ap1.x;
         float fac_am = ap2.y - ap1.y;
@@ -181,32 +180,32 @@ void Calculate3DTask(void *pvParam)
         float fac_ao = (ap0.x - ap2.x);
         float fac_ap = (ap0.y - ap2.y);
         float fac_aq = ap2.x * fac_ap - ap2.y * fac_ao;
-        float fac_aj = 1.0/(-(ap0.x) * (fac_am) + (ap0.y) * (fac_al) + fac_an);
-        float fac_ak = 1.0/(-(ap1.x) * (fac_ap) + (ap1.y) * (fac_ao) + fac_aq);
+        float fac_aj = 1.0 / (-(ap0.x) * (fac_am) + (ap0.y) * (fac_al) + fac_an);
+        float fac_ak = 1.0 / (-(ap1.x) * (fac_ap) + (ap1.y) * (fac_ao) + fac_aq);
 
-        float ta=fac_n*fac_j;
-        float tb=fac_q*fac_k;
-        float tc=fac_m*fac_j;
-        float td=fac_l*fac_j;
-        float te=fac_p*fac_k;
-        float tf=fac_o*fac_k;
+        float ta = fac_n * fac_j;
+        float tb = fac_q * fac_k;
+        float tc = fac_m * fac_j;
+        float td = fac_l * fac_j;
+        float te = fac_p * fac_k;
+        float tf = fac_o * fac_k;
 
-        float taa=fac_an*fac_aj;
-        float tab=fac_aq*fac_ak;
-        float tac=fac_am*fac_aj;
-        float tad=fac_al*fac_aj;
-        float tae=fac_ap*fac_ak;
-        float taf=fac_ao*fac_ak;
+        float taa = fac_an * fac_aj;
+        float tab = fac_aq * fac_ak;
+        float tac = fac_am * fac_aj;
+        float tad = fac_al * fac_aj;
+        float tae = fac_ap * fac_ak;
+        float taf = fac_ao * fac_ak;
 
         for (int i = 0; i < 240; i++)
         {
             for (int j = 0; j < 320; j++)
             {
 
-                //alpha = (-j * fac_m + i * fac_l + fac_n) * fac_j;
-                //beta = (-j * fac_p + i * fac_o + fac_q) * fac_k;
-                alpha = -j * tc + i * td+ta;
-                beta = -j * te+ i * tf +tb;
+                // alpha = (-j * fac_m + i * fac_l + fac_n) * fac_j;
+                // beta = (-j * fac_p + i * fac_o + fac_q) * fac_k;
+                alpha = -j * tc + i * td + ta;
+                beta = -j * te + i * tf + tb;
                 gamma = 1.0f - alpha - beta;
 
                 if (alpha >= 0.0f && beta >= 0.0f && gamma >= 0.0f)
@@ -231,22 +230,22 @@ void Calculate3DTask(void *pvParam)
                     buffer[i * 320 + j] = buffer1[texY * 320 + texX];
                 }
                 else
-                 {
+                {
                     //  alpha1 = (-j * fac_am + i* fac_al+fac_an) / fac_aj;
                     //  beta1 = (-j *fac_ap  + i * fac_ao+fac_aq) / fac_ak;
-                    alpha1 = -j * tac + i * tad+taa;
-                    beta1 = -j * tae+ i * taf +tab;
-                     gamma1 = 1.0f - alpha1 - beta1;
-                     if (alpha1 >= 0.0f && beta1 >= 0.0f && gamma1 >= 0.0f)
-                     {
-                         // 纹理坐标在三角形内部
-                         float aa1 = alpha1 * ap0.z;
-                         float bb1 = beta1 * ap1.z;
-                         float cc1 = gamma1 * ap2.z;
-                         float zz1 = 1.0 / (aa1 + bb1 + cc1);
-                         float u = zz1 * (aa1 * auv0.x + bb1 * auv1.x + cc1 * auv2.x);
-                         float v = zz1 * (aa1 * auv0.y + bb1 * auv1.y + cc1 * auv2.y);
-                         // 纹理坐标限制在[0, 1]范围内
+                    alpha1 = -j * tac + i * tad + taa;
+                    beta1 = -j * tae + i * taf + tab;
+                    gamma1 = 1.0f - alpha1 - beta1;
+                    if (alpha1 >= 0.0f && beta1 >= 0.0f && gamma1 >= 0.0f)
+                    {
+                        // 纹理坐标在三角形内部
+                        float aa1 = alpha1 * ap0.z;
+                        float bb1 = beta1 * ap1.z;
+                        float cc1 = gamma1 * ap2.z;
+                        float zz1 = 1.0 / (aa1 + bb1 + cc1);
+                        float u = zz1 * (aa1 * auv0.x + bb1 * auv1.x + cc1 * auv2.x);
+                        float v = zz1 * (aa1 * auv0.y + bb1 * auv1.y + cc1 * auv2.y);
+                        // 纹理坐标限制在[0, 1]范围内
                         //  u = fminf(fmaxf(u, 0.0f), 1.0f);
                         //  v = fminf(fmaxf(v, 0.0f), 1.0f);
 
@@ -257,11 +256,11 @@ void Calculate3DTask(void *pvParam)
                         // 设置像素颜色
                         buffer[i * 320 + j] = buffer1[texY * 320 + texX];
                     }
-                else
-                {
-                    buffer[i * 320 + j] = Black;
+                    else
+                    {
+                        buffer[i * 320 + j] = Black;
+                    }
                 }
-                 }
             }
         }
         esp_lcd_panel_draw_bitmap(disp_drv.user_data, 0, 0, 320, 240, buffer);
@@ -273,30 +272,32 @@ void Calculate3DTask(void *pvParam)
 //--------------------------------RotationCaculateTask--------------------------------//
 void RotationCaculateTask(void *pvParam)
 {
-    float cy;
-    float sy;
-    float cp;
-    float sp;
-    float cr;
-    float sr;
+    float cy;float sy;float cp;float sp;float cr;
+    float sr;float cr2;float sr2;float sy2;float cy2;
     while (1)
     {
-        ESP_LOGI(TAG, "RotationCaculateTask:Waiting...");
+        // ESP_LOGI(TAG, "RotationCaculateTask:Waiting...");
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        ESP_LOGI(TAG, "RotationCaculateTask:Caculate");
+        // ESP_LOGI(TAG, "RotationCaculateTask:Caculate");
         cy = cos(fac_yaw);
         sy = sin(fac_yaw);
         cp = cos(fac_pitch);
         sp = sin(fac_pitch);
         cr = cos(fac_roll);
         sr = sin(fac_roll);
-        fac_a = (cp * cr * cr * cy + cp * cy * sr * sr);
+
+        cr2 = cr * cr;
+        sr2 = sr * sr;
+        sy2 = sy * sy;
+        cy2 = cy * cy;
+
+        fac_a = (cp * cr2 * cy + cp * cy * sr2);
         fac_b = (cy * sp * sr - cr * sy);
         fac_c = (cr * cy * sp + sr * sy);
-        fac_d = (cp * cr * cr * sy + cp * sr * sr * sy);
+        fac_d = (cp * cr2 * sy + cp * sr2 * sy);
         fac_e = (cr * cy + sp * sr * sy);
         fac_f = (-cy * sr + cr * sp * sy);
-        fac_g = (cr * cr * cy * cy * sp + cy * cy * sp * sr * sr + cr * cr * sp * sy * sy + sp * sr * sr * sy * sy);
+        fac_g = (cr2 * cy2 * sp + cy2 * sp * sr2 + cr2 * sp * sy2 + sp * sr2 * sy2);
         fac_h = (cp * sr);
         fac_i = (cp * cr);
     }
@@ -460,13 +461,12 @@ void app_main(void)
         vTaskDelay(pdMS_TO_TICKS(10));
         // The task running lv_timer_handler should have lower priority than that running `lv_tick_inc`
         lv_timer_handler();
-        // UpdateRotation(ia/100.0,ia/100.0,ia/100.0);
         fac_yaw = ia / 100.0;
         fac_pitch = ia / 100.0;
         fac_roll = ia / 100.0;
         xTaskNotifyGive(xRotationCaculateTask);
         ia++;
-        ESP_LOGI(TAG, "%f", ia);
+        // ESP_LOGI(TAG, "%f", ia);
         if (ia == 40)
         {
             ia = 0;
