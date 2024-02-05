@@ -71,11 +71,9 @@ lv_color_t *buffer1 = NULL;
 lv_color_t *buffer = NULL;
 lv_color_t Black;
 
-Point3 ScreenPoints[] = {{-0.8, 0.8, -1}, {-0.8, -0.8, -1}, {0.8, 0.8, -1}, {0.8, -0.8, -1}}; //屏幕三维对应点： 左上、左下、右上、右下
-Point3 ScreenPoints3[] = {{0, 1, -1}, {0, 0, -1}, {1, 1, -1}, {1, 0, -1}}; // 贴图对应点：左上、左下、右上、右下
+Point3 ScreenPoints[] = {{-0.8, 0.8, -1}, {-0.8, -0.8, -1}, {0.8, 0.8, -1}, {0.8, -0.8, -1}}; // 屏幕三维对应点： 左上、左下、右上、右下
+Point3 ScreenPoints3[] = {{0, 1, -1}, {0, 0, -1}, {1, 1, -1}, {1, 0, -1}};                    // 贴图对应点：左上、左下、右上、右下
 //--------------------------------3DRender--------------------------------//
-
-
 
 // we use two semaphores to sync the VSYNC event and the LVGL task, to avoid potential tearing effect
 #if CONFIG_EXAMPLE_AVOID_TEAR_EFFECT_WITH_SEM
@@ -117,16 +115,23 @@ static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_
     xSemaphoreTake(sem_vsync_end, portMAX_DELAY);
 #endif
     buffer1 = color_map;
-    //ESP_LOGI(TAG, "C大大大大大大alculate3DTask:Waiting...");
     xTaskNotifyGive(xCalculate3DTask);
     // esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, 320, 240, buffer);
     // lv_disp_flush_ready(drv);
 }
 
-
-
-
-
+Point3 perspectiveProjection1(Point3 p)
+{
+    float x1 = Camx + fac_a * p.x + fac_b * p.y + fac_c * p.z;
+    float y1 = Camy + fac_d * p.x + fac_e * p.y + fac_f * p.z;
+    // float z1 = (2 * far * near) / (-far + near) + (Camz * (far + near)) / (-far + near) + (far + near) * (-cr *cr * cy *cy * sp - cy *cy * sp * sr *sr - cr *cr * sp * sy *sy - sp * sr *sr * sy *sy) * p.x / (-far + near) + (cp * (far + near) * sr * 1.0) * p.y / (-far + near) + cp * cr * (far + near)  * p.z / (-far + near);
+    float w = -Camz + fac_g * p.x - fac_h * p.y - fac_i * p.z;
+    Point3 resultPoint;
+    resultPoint.x = (0.5 * (x1 / w + 1) * 320);
+    resultPoint.y = (0.5 * (1 - y1 / w) * 240);
+    resultPoint.z = 1/w;//注意这里存的是w的倒数
+    return resultPoint;
+}
 
 //--------------------------------Calculate3DTask--------------------------------//
 void Calculate3DTask(void *pvParam)
@@ -139,18 +144,18 @@ void Calculate3DTask(void *pvParam)
         ESP_LOGI(TAG, "Calculate3DTask:Caculate");
 
         // 三角形顶点坐标
-        Point3 p0 = perspectiveProjection(ScreenPoints[3]);
-        Point3 p1 = perspectiveProjection(ScreenPoints[0]);
-        Point3 p2 = perspectiveProjection(ScreenPoints[2]);
+        Point3 p0 = perspectiveProjection1(ScreenPoints[3]);
+        Point3 p1 = perspectiveProjection1(ScreenPoints[0]);
+        Point3 p2 = perspectiveProjection1(ScreenPoints[2]);
 
         // 纹理坐标
         Point3 uv0 = ScreenPoints3[3];
         Point3 uv1 = ScreenPoints3[0];
         Point3 uv2 = ScreenPoints3[2];
         // 三角形顶点坐标
-        Point3 ap0 = perspectiveProjection(ScreenPoints[0]);
-        Point3 ap1 = perspectiveProjection(ScreenPoints[1]);
-        Point3 ap2 = perspectiveProjection(ScreenPoints[3]);
+        Point3 ap0 = perspectiveProjection1(ScreenPoints[0]);
+        Point3 ap1 = perspectiveProjection1(ScreenPoints[1]);
+        Point3 ap2 = perspectiveProjection1(ScreenPoints[3]);
 
         // 纹理坐标
         Point3 auv0 = ScreenPoints3[0];
@@ -160,42 +165,63 @@ void Calculate3DTask(void *pvParam)
         // 初始化插值参数``
         float alpha, beta, gamma, alpha1, beta1, gamma1;
 
-        float fac_j = (-(p0.x - p1.x) * (p2.y - p1.y) + (p0.y - p1.y) * (p2.x - p1.x));
-        float fac_k = (-(p1.x - p2.x) * (p0.y - p2.y) + (p1.y - p2.y) * (p0.x - p2.x));
         float fac_l = p2.x - p1.x;
         float fac_m = p2.y - p1.y;
-        float fac_n = p1.x*fac_m-p1.y*fac_l;
+        float fac_n = p1.x * fac_m - p1.y * fac_l;
         float fac_o = (p0.x - p2.x);
         float fac_p = (p0.y - p2.y);
-        float fac_q = p2.x*fac_p- p2.y*fac_o;
+        float fac_q = p2.x * fac_p - p2.y * fac_o;
+        float fac_j = 1.0/(-(p0.x) * (fac_m) + (p0.y) * (fac_l) + fac_n);
+        float fac_k = 1.0/(-(p1.x) * (fac_p) + (p1.y) * (fac_o) + fac_q);
 
+
+        float fac_al = ap2.x - ap1.x;
+        float fac_am = ap2.y - ap1.y;
+        float fac_an = ap1.x * fac_am - ap1.y * fac_al;
+        float fac_ao = (ap0.x - ap2.x);
+        float fac_ap = (ap0.y - ap2.y);
+        float fac_aq = ap2.x * fac_ap - ap2.y * fac_ao;
+        float fac_aj = 1.0/(-(ap0.x) * (fac_am) + (ap0.y) * (fac_al) + fac_an);
+        float fac_ak = 1.0/(-(ap1.x) * (fac_ap) + (ap1.y) * (fac_ao) + fac_aq);
+
+        float ta=fac_n*fac_j;
+        float tb=fac_q*fac_k;
+        float tc=fac_m*fac_j;
+        float td=fac_l*fac_j;
+        float te=fac_p*fac_k;
+        float tf=fac_o*fac_k;
+
+        float taa=fac_an*fac_aj;
+        float tab=fac_aq*fac_ak;
+        float tac=fac_am*fac_aj;
+        float tad=fac_al*fac_aj;
+        float tae=fac_ap*fac_ak;
+        float taf=fac_ao*fac_ak;
 
         for (int i = 0; i < 240; i++)
         {
             for (int j = 0; j < 320; j++)
             {
-                
 
-                alpha = (-j * fac_m + i* fac_l+fac_n) / fac_j;
-                beta = (-j *fac_p  + i * fac_o+fac_q) / fac_k;
+                //alpha = (-j * fac_m + i * fac_l + fac_n) * fac_j;
+                //beta = (-j * fac_p + i * fac_o + fac_q) * fac_k;
+                alpha = -j * tc + i * td+ta;
+                beta = -j * te+ i * tf +tb;
                 gamma = 1.0f - alpha - beta;
-                // alpha1 = (-(j - ap1.x) * (ap2.y - ap1.y) + (i - ap1.y) * (ap2.x - ap1.x)) / (-(ap0.x - ap1.x) * (ap2.y - ap1.y) + (ap0.y - ap1.y) * (ap2.x - ap1.x));
-                // beta1 = (-(j - ap2.x) * (ap0.y - ap2.y) + (i - ap2.y) * (ap0.x - ap2.x)) / (-(ap1.x - ap2.x) * (ap0.y - ap2.y) + (ap1.y - ap2.y) * (ap0.x - ap2.x));
-                // gamma1 = 1.0f - alpha1 - beta1;
 
                 if (alpha >= 0.0f && beta >= 0.0f && gamma >= 0.0f)
                 {
-                    float aa = alpha / p0.z;
-                    float bb = beta / p1.z;
-                    float cc = gamma / p2.z;
+                    float aa = alpha * p0.z;
+                    float bb = beta * p1.z;
+                    float cc = gamma * p2.z;
                     float zz = 1.0 / (aa + bb + cc);
                     // 纹理坐标在三角形内部
                     float u = zz * (aa * uv0.x + bb * uv1.x + cc * uv2.x);
                     float v = zz * (aa * uv0.y + bb * uv1.y + cc * uv2.y);
 
-                    // 纹理坐标限制在[0, 1]范围内
-                    u = fminf(fmaxf(u, 0.0f), 1.0f);
-                    v = fminf(fmaxf(v, 0.0f), 1.0f);
+                    // // 纹理坐标限制在[0, 1]范围内
+                    // u = fminf(fmaxf(u, 0.0f), 1.0f);
+                    // v = fminf(fmaxf(v, 0.0f), 1.0f);
 
                     // 在纹理贴图上查找颜色值
                     int texX = (int)(u * (320 - 1));
@@ -204,40 +230,45 @@ void Calculate3DTask(void *pvParam)
                     // 设置像素颜色
                     buffer[i * 320 + j] = buffer1[texY * 320 + texX];
                 }
-                // else if (alpha1 >= 0.0f && beta1 >= 0.0f && gamma1 >= 0.0f)
-                // {
-                //     // 纹理坐标在三角形内部
-                //     float aa1 = alpha1 / ap0.z;
-                //     float bb1 = beta1 / ap1.z;
-                //     float cc1 = gamma1 / ap2.z;
-                //     float zz1 = 1.0 / (aa1 + bb1 + cc1);
-                //     float u = zz1 * (aa1 * auv0.x + bb1 * auv1.x + cc1 * auv2.x);
-                //     float v = zz1 * (aa1 * auv0.y + bb1 * auv1.y + cc1 * auv2.y);
-                //     // 纹理坐标限制在[0, 1]范围内
-                //     u = fminf(fmaxf(u, 0.0f), 1.0f);
-                //     v = fminf(fmaxf(v, 0.0f), 1.0f);
+                else
+                 {
+                    //  alpha1 = (-j * fac_am + i* fac_al+fac_an) / fac_aj;
+                    //  beta1 = (-j *fac_ap  + i * fac_ao+fac_aq) / fac_ak;
+                    alpha1 = -j * tac + i * tad+taa;
+                    beta1 = -j * tae+ i * taf +tab;
+                     gamma1 = 1.0f - alpha1 - beta1;
+                     if (alpha1 >= 0.0f && beta1 >= 0.0f && gamma1 >= 0.0f)
+                     {
+                         // 纹理坐标在三角形内部
+                         float aa1 = alpha1 * ap0.z;
+                         float bb1 = beta1 * ap1.z;
+                         float cc1 = gamma1 * ap2.z;
+                         float zz1 = 1.0 / (aa1 + bb1 + cc1);
+                         float u = zz1 * (aa1 * auv0.x + bb1 * auv1.x + cc1 * auv2.x);
+                         float v = zz1 * (aa1 * auv0.y + bb1 * auv1.y + cc1 * auv2.y);
+                         // 纹理坐标限制在[0, 1]范围内
+                        //  u = fminf(fmaxf(u, 0.0f), 1.0f);
+                        //  v = fminf(fmaxf(v, 0.0f), 1.0f);
 
-                //     // 在纹理贴图上查找颜色值
-                //     int texX = (int)(u * (320 - 1));
-                //     int texY = (int)(v * (240 - 1));
+                        // 在纹理贴图上查找颜色值
+                        int texX = (int)(u * (320 - 1));
+                        int texY = (int)(v * (240 - 1));
 
-                //     // 设置像素颜色
-                //     buffer[i * 320 + j] = buffer1[texY * 320 + texX];
-                // }
+                        // 设置像素颜色
+                        buffer[i * 320 + j] = buffer1[texY * 320 + texX];
+                    }
                 else
                 {
                     buffer[i * 320 + j] = Black;
                 }
+                 }
             }
         }
         esp_lcd_panel_draw_bitmap(disp_drv.user_data, 0, 0, 320, 240, buffer);
         lv_disp_flush_ready(&disp_drv);
     }
-     
 }
 //--------------------------------Calculate3DTask--------------------------------//
-
-
 
 //--------------------------------RotationCaculateTask--------------------------------//
 void RotationCaculateTask(void *pvParam)
@@ -271,10 +302,6 @@ void RotationCaculateTask(void *pvParam)
     }
 }
 //--------------------------------RotationCaculateTask--------------------------------//
-
-
-
-
 
 void app_main(void)
 {

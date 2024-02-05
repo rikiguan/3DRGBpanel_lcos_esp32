@@ -73,10 +73,10 @@ Point3 perspectiveProjection(Point3 p)
     return resultPoint;
 }
 
-// 计算重心坐标
-void cacuCenterOfGravity(Point3 p0, Point3 p1, Point3 p2, float *alpha, float *beta, float *gamma,float x,float y)
-{
-    *alpha = (-(x - p1.x) * (p2.y - p1.y) + (y - p1.y) * (p2.x - p1.x)) / (-(p0.x - p1.x) * (p2.y - p1.y) + (p0.y - p1.y) * (p2.x - p1.x));
-    *beta = (-(x - p2.x) * (p0.y - p2.y) + (y - p2.y) * (p0.x - p2.x)) / (-(p1.x - p2.x) * (p0.y - p2.y) + (p1.y - p2.y) * (p0.x - p2.x));
-    *gamma = 1.0f - *alpha - *beta;
-}
+// // 计算重心坐标
+// void cacuCenterOfGravity(Point3 p0, Point3 p1, Point3 p2, float *alpha, float *beta, float *gamma,float x,float y)
+// {
+//     *alpha = (-(x - p1.x) * (p2.y - p1.y) + (y - p1.y) * (p2.x - p1.x)) / (-(p0.x - p1.x) * (p2.y - p1.y) + (p0.y - p1.y) * (p2.x - p1.x));
+//     *beta = (-(x - p2.x) * (p0.y - p2.y) + (y - p2.y) * (p0.x - p2.x)) / (-(p1.x - p2.x) * (p0.y - p2.y) + (p1.y - p2.y) * (p0.x - p2.x));
+//     *gamma = 1.0f - *alpha - *beta;
+// }
