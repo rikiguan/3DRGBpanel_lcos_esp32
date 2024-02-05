@@ -151,7 +151,16 @@ void Calculate3DTask(void *pvParam)
     Point3 ap1;
     Point3 ap2;
     // 初始化插值参数``
-    float alpha, beta, gamma, alpha1, beta1, gamma1;
+    float alpha, beta, gamma;
+
+    float aa;
+    float bb;
+    float cc;
+    float zz;
+    float u;
+    float v;
+    int texX;
+    int texY;
 
     while (1)
     {
@@ -159,11 +168,9 @@ void Calculate3DTask(void *pvParam)
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         // ESP_LOGI(TAG, "Calculate3DTask:Caculate");
 
-        
         perspectiveProjection1(ScreenPoints[3], &p0);
         perspectiveProjection1(ScreenPoints[0], &p1);
         perspectiveProjection1(ScreenPoints[2], &p2);
-        
 
         perspectiveProjection1(ScreenPoints[0], &ap0);
         perspectiveProjection1(ScreenPoints[1], &ap1);
@@ -201,12 +208,6 @@ void Calculate3DTask(void *pvParam)
         float tae = fac_ap * fac_ak;
         float taf = fac_ao * fac_ak;
 
-        float aa;
-        float bb;
-        float cc;
-        float zz;
-        float u ;
-        float v ;
         for (int i = 0; i < 240; i++)
         {
             for (int j = 0; j < 320; j++)
@@ -224,16 +225,16 @@ void Calculate3DTask(void *pvParam)
                     bb = beta * p1.z;
                     cc = gamma * p2.z;
                     zz = 1.0 / (aa + bb + cc);
-                    u  = zz * (aa * uv0.x + bb * uv1.x + cc * uv2.x);
-                    v  = zz * (aa * uv0.y + bb * uv1.y + cc * uv2.y);
+                    u = zz * (aa * uv0.x + bb * uv1.x + cc * uv2.x);
+                    v = zz * (aa * uv0.y + bb * uv1.y + cc * uv2.y);
 
                     // // 纹理坐标限制在[0, 1]范围内
                     // u = fminf(fmaxf(u, 0.0f), 1.0f);
                     // v = fminf(fmaxf(v, 0.0f), 1.0f);
 
                     // 在纹理贴图上查找颜色值
-                    int texX = (int)(u * (320 - 1));
-                    int texY = (int)(v * (240 - 1));
+                    texX = (int)(u * (320 - 1));
+                    texY = (int)(v * (240 - 1));
 
                     // 设置像素颜色
                     buffer[i * 320 + j] = buffer1[texY * 320 + texX];
@@ -242,25 +243,25 @@ void Calculate3DTask(void *pvParam)
                 {
                     //  alpha1 = (-j * fac_am + i* fac_al+fac_an) / fac_aj;
                     //  beta1 = (-j *fac_ap  + i * fac_ao+fac_aq) / fac_ak;
-                    alpha1 = -j * tac + i * tad + taa;
-                    beta1 = -j * tae + i * taf + tab;
-                    gamma1 = 1.0f - alpha1 - beta1;
-                    if (alpha1 >= 0.0f && beta1 >= 0.0f && gamma1 >= 0.0f)
+                    alpha = -j * tac + i * tad + taa;
+                    beta = -j * tae + i * taf + tab;
+                    gamma = 1.0f - alpha - beta;
+                    if (alpha >= 0.0f && beta >= 0.0f && gamma >= 0.0f)
                     {
                         // 纹理坐标在三角形内部
-                        float aa1 = alpha1 * ap0.z;
-                        float bb1 = beta1 * ap1.z;
-                        float cc1 = gamma1 * ap2.z;
-                        float zz1 = 1.0 / (aa1 + bb1 + cc1);
-                        float u = zz1 * (aa1 * auv0.x + bb1 * auv1.x + cc1 * auv2.x);
-                        float v = zz1 * (aa1 * auv0.y + bb1 * auv1.y + cc1 * auv2.y);
+                        aa = alpha * ap0.z;
+                        bb = beta * ap1.z;
+                        cc = gamma * ap2.z;
+                        zz = 1.0 / (aa + bb + cc);
+                        u = zz * (aa * auv0.x + bb * auv1.x + cc * auv2.x);
+                        v = zz * (aa * auv0.y + bb * auv1.y + cc * auv2.y);
                         // 纹理坐标限制在[0, 1]范围内
                         //  u = fminf(fmaxf(u, 0.0f), 1.0f);
                         //  v = fminf(fmaxf(v, 0.0f), 1.0f);
 
                         // 在纹理贴图上查找颜色值
-                        int texX = (int)(u * (320 - 1));
-                        int texY = (int)(v * (240 - 1));
+                        texX = (int)(u * (320 - 1));
+                        texY = (int)(v * (240 - 1));
 
                         // 设置像素颜色
                         buffer[i * 320 + j] = buffer1[texY * 320 + texX];
