@@ -120,17 +120,16 @@ static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_
     // lv_disp_flush_ready(drv);
 }
 
-Point3 perspectiveProjection1(Point3 p)
+void perspectiveProjection1(Point3 p, Point3 *resultPoint)
 {
     float x1 = Camx + fac_a * p.x + fac_b * p.y + fac_c * p.z;
     float y1 = Camy + fac_d * p.x + fac_e * p.y + fac_f * p.z;
     // float z1 = (2 * far * near) / (-far + near) + (Camz * (far + near)) / (-far + near) + (far + near) * (-cr *cr * cy *cy * sp - cy *cy * sp * sr *sr - cr *cr * sp * sy *sy - sp * sr *sr * sy *sy) * p.x / (-far + near) + (cp * (far + near) * sr * 1.0) * p.y / (-far + near) + cp * cr * (far + near)  * p.z / (-far + near);
     float w = -Camz + fac_g * p.x - fac_h * p.y - fac_i * p.z;
-    Point3 resultPoint;
-    resultPoint.x = (0.5 * (x1 / w + 1) * 320);
-    resultPoint.y = (0.5 * (1 - y1 / w) * 240);
-    resultPoint.z = 1 / w; // 注意这里存的是w的倒数
-    return resultPoint;
+
+    resultPoint->x = (0.5 * (x1 / w + 1) * 320);
+    resultPoint->y = (0.5 * (1 - y1 / w) * 240);
+    resultPoint->z = 1 / w; // 注意这里存的是w的倒数
 }
 
 //--------------------------------Calculate3DTask--------------------------------//
@@ -145,25 +144,30 @@ void Calculate3DTask(void *pvParam)
     Point3 auv0 = ScreenPoints3[0];
     Point3 auv1 = ScreenPoints3[1];
     Point3 auv2 = ScreenPoints3[3];
+    Point3 p0;
+    Point3 p1;
+    Point3 p2;
+    Point3 ap0;
+    Point3 ap1;
+    Point3 ap2;
     // 初始化插值参数``
     float alpha, beta, gamma, alpha1, beta1, gamma1;
 
-    // lv_disp_drv_t *drv=&disp_drv;
     while (1)
     {
         // ESP_LOGI(TAG, "Calculate3DTask:Waiting...");
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         // ESP_LOGI(TAG, "Calculate3DTask:Caculate");
 
-        // 三角形顶点坐标
-        Point3 p0 = perspectiveProjection1(ScreenPoints[3]);
-        Point3 p1 = perspectiveProjection1(ScreenPoints[0]);
-        Point3 p2 = perspectiveProjection1(ScreenPoints[2]);
+        
+        perspectiveProjection1(ScreenPoints[3], &p0);
+        perspectiveProjection1(ScreenPoints[0], &p1);
+        perspectiveProjection1(ScreenPoints[2], &p2);
+        
 
-        // 三角形顶点坐标
-        Point3 ap0 = perspectiveProjection1(ScreenPoints[0]);
-        Point3 ap1 = perspectiveProjection1(ScreenPoints[1]);
-        Point3 ap2 = perspectiveProjection1(ScreenPoints[3]);
+        perspectiveProjection1(ScreenPoints[0], &ap0);
+        perspectiveProjection1(ScreenPoints[1], &ap1);
+        perspectiveProjection1(ScreenPoints[3], &ap2);
 
         float fac_l = p2.x - p1.x;
         float fac_m = p2.y - p1.y;
@@ -197,6 +201,12 @@ void Calculate3DTask(void *pvParam)
         float tae = fac_ap * fac_ak;
         float taf = fac_ao * fac_ak;
 
+        float aa;
+        float bb;
+        float cc;
+        float zz;
+        float u ;
+        float v ;
         for (int i = 0; i < 240; i++)
         {
             for (int j = 0; j < 320; j++)
@@ -210,13 +220,12 @@ void Calculate3DTask(void *pvParam)
 
                 if (alpha >= 0.0f && beta >= 0.0f && gamma >= 0.0f)
                 {
-                    float aa = alpha * p0.z;
-                    float bb = beta * p1.z;
-                    float cc = gamma * p2.z;
-                    float zz = 1.0 / (aa + bb + cc);
-                    // 纹理坐标在三角形内部
-                    float u = zz * (aa * uv0.x + bb * uv1.x + cc * uv2.x);
-                    float v = zz * (aa * uv0.y + bb * uv1.y + cc * uv2.y);
+                    aa = alpha * p0.z;
+                    bb = beta * p1.z;
+                    cc = gamma * p2.z;
+                    zz = 1.0 / (aa + bb + cc);
+                    u  = zz * (aa * uv0.x + bb * uv1.x + cc * uv2.x);
+                    v  = zz * (aa * uv0.y + bb * uv1.y + cc * uv2.y);
 
                     // // 纹理坐标限制在[0, 1]范围内
                     // u = fminf(fmaxf(u, 0.0f), 1.0f);
@@ -272,8 +281,16 @@ void Calculate3DTask(void *pvParam)
 //--------------------------------RotationCaculateTask--------------------------------//
 void RotationCaculateTask(void *pvParam)
 {
-    float cy;float sy;float cp;float sp;float cr;
-    float sr;float cr2;float sr2;float sy2;float cy2;
+    float cy;
+    float sy;
+    float cp;
+    float sp;
+    float cr;
+    float sr;
+    float cr2;
+    float sr2;
+    float sy2;
+    float cy2;
     while (1)
     {
         // ESP_LOGI(TAG, "RotationCaculateTask:Waiting...");
